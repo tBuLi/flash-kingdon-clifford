@@ -112,7 +112,7 @@ Let's put some benchmarks to these claims.
 | **Forward + Backward Pass Memory Ratio** | <img src="tests/benchmarks/results/p2m0/memory/fwd_bwd.png" width="100%"> | <img src="tests/benchmarks/results/p2m0_kingdon/memory/fwd_bwd.png" width="100%"> |
 
 Conclusion: both `flash-clifford` and `flash-kingdon` are indistinguishable in their performance increase over the reference torch implementation.
-More benchmarks to follow, when we implement 3D, which should be more statistically significant.
+More benchmarks to follow, when we implement 3D, which should be more statistically significant, but no difference between the two is expected.
 
 ## Requirements
 The following requirements must be satisfied:
