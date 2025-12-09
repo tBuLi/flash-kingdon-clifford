@@ -8,13 +8,15 @@ torch.set_float32_matmul_precision('medium')
 from ops.p2m0 import fused_gelu_sgp_norm_2d
 from tests.baselines import gelu_sgp_norm_2d_torch
 from tests.utils import run_correctness_test, run_benchmark
+from tests.config_loader import load_config
 
 
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    rep = 10
-    batch_size = 32
-    num_features = 16
+    config = load_config()
+    rep = config['tests']['rep']
+    batch_size = config['tests']['batch_size']
+    num_features = config['tests']['num_features']
 
     x = torch.randn(4, batch_size, num_features, device=device).contiguous()
     y = torch.randn(4, batch_size, num_features, device=device).contiguous()

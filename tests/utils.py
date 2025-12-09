@@ -1,3 +1,4 @@
+import csv
 import os
 
 import matplotlib.pyplot as plt
@@ -95,7 +96,7 @@ def run_correctness_test(triton_fn, torch_fn, kwargs):
         print(f"grad {name} max diff: {grad_diff:.1e}" + (" ✔" if grad_correct else " ✘"))
 
 
-def plot_heatmap(results, metric_key, title, save_path, cmap='RdYlGn', invert_cmap=False):
+def plot_heatmap(results, metric_key, title, save_path, cmap='RdYlGn', invert_cmap=False, vmin=None, vmax=None):
     """Heatmap visualization of benchmark results."""
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
@@ -110,7 +111,7 @@ def plot_heatmap(results, metric_key, title, save_path, cmap='RdYlGn', invert_cm
 
     fig, ax = plt.subplots(figsize=(10, 8))
     cmap_name = f'{cmap}_r' if invert_cmap else cmap
-    im = ax.imshow(matrix, cmap=cmap_name, aspect='auto')
+    im = ax.imshow(matrix, cmap=cmap_name, aspect='auto', vmin=vmin, vmax=vmax)
 
     ax.set_xticks(np.arange(len(num_features_list)))
     ax.set_yticks(np.arange(len(batch_sizes)))
@@ -207,6 +208,31 @@ def print_results_table(results, title):
               f"{torch_mem:<12} {ratio:<10}")
 
     print(separator)
+
+
+def save_results_csv(results, path):
+    """Save benchmark results to CSV file."""
+    csv_path = os.path.join(path, 'results.csv')
+    os.makedirs(path, exist_ok=True)
+    
+    if not results:
+        return
+    
+    fieldnames = [
+        'batch_size', 'num_features',
+        'time_fwd_fused', 'time_fwd_torch', 'speedup_fwd',
+        'time_fwd_bwd_fused', 'time_fwd_bwd_torch', 'speedup_fwd_bwd',
+        'mem_fwd_fused', 'mem_fwd_torch', 'mem_ratio_fwd',
+        'mem_fwd_bwd_fused', 'mem_fwd_bwd_torch', 'mem_ratio_fwd_bwd',
+        'max_diff', 'is_correct'
+    ]
+    
+    with open(csv_path, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+    
+    print(f"\nResults saved to: {csv_path}")
 
 
 def run_single_benchmark(triton_fn, torch_fn, setup_fn, batch_size, num_features, rep, warmup=200, verify_correctness=True, return_mode='mean'):

@@ -7,7 +7,8 @@ torch._dynamo.config.cache_size_limit = 512
 
 from modules.layer import Layer
 from modules.baseline import Layer as BaselineLayer
-from tests.utils import plot_heatmap, print_results_table, run_single_benchmark
+from tests.utils import plot_heatmap, print_results_table, run_single_benchmark, save_results_csv
+from tests.config_loader import load_config
 
 
 def setup_benchmark(batch_size, num_features):
@@ -24,10 +25,11 @@ def create_layers(num_features: int):
 if __name__ == "__main__":
     assert torch.cuda.is_available()
     
-    rep = 10
-    warmup = 500
-    batch_sizes=[n // 8 for n in [1024, 2048, 4096, 8192]]
-    num_features_list=[n // 8 for n in [128, 256, 512, 1024]]
+    config = load_config()
+    rep = config['benchmarks']['rep']
+    warmup = config['benchmarks']['warmup']
+    batch_sizes = config['benchmarks']['batch_sizes']
+    num_features_list = config['benchmarks']['num_features_list']
     path = "tests/benchmarks/results/layer_2d"
     
     results = []
@@ -56,12 +58,13 @@ if __name__ == "__main__":
             print(f"{fwd_msg}, {bwd_msg}")
     
     print_results_table(results, "layer_2d")
+    save_results_csv(results, path)
 
     plot_heatmap(results, 'speedup_fwd', 'Forward Pass Speedup: Triton vs PyTorch\nCl(2,0)',
-                 path + '/speedup/fwd.png')
+                 path + '/speedup/fwd.png', vmin=1, vmax=6)
     plot_heatmap(results, 'speedup_fwd_bwd', 'Forward + Backward Pass Speedup: Triton vs PyTorch\nCl(2,0)',
-                 path + '/speedup/fwd_bwd.png')
+                 path + '/speedup/fwd_bwd.png', vmin=1, vmax=6)
     plot_heatmap(results, 'mem_ratio_fwd', 'Forward Pass Memory Ratio: Fused / PyTorch\nCl(2,0)',
-                 path + '/memory/fwd.png', invert_cmap=True)
+                 path + '/memory/fwd.png', invert_cmap=True, vmin=0, vmax=1)
     plot_heatmap(results, 'mem_ratio_fwd_bwd', 'Forward + Backward Pass Memory Ratio: Fused / PyTorch\nCl(2,0)',
-                 path + '/memory/fwd_bwd.png', invert_cmap=True)
+                 path + '/memory/fwd_bwd.png', invert_cmap=True, vmin=0, vmax=1)

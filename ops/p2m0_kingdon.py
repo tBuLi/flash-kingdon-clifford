@@ -1,7 +1,7 @@
 import torch
 import triton
 import triton.language as tl
-from kingdon import Algebra, MultiVector
+from .vga2d import weighted_gp_kernel, gate_kernel, weighted_gp_grad_kernel
 
 MV_DIM = 4
 NUM_GRADES = 3
@@ -13,39 +13,6 @@ DEFAULT_BATCH_BLOCK = 4
 DEFAULT_FEATURE_BLOCK = 128
 DEFAULT_NUM_WARPS = 16
 DEFAULT_NUM_STAGES = 1
-
-
-"""
-We are going for graded weighting on the GP.
-"""
-ALGEBRA = Algebra(2, wrapper=triton.jit)  # The wrapper is applied to all kingdon compiled functions, ensuring they can be used in triton kernels.
-X = ALGEBRA.multivector(name='x')
-Y = ALGEBRA.multivector(name='y')
-Ws = [ALGEBRA.scalar(name=f'w{i}') for i in range(NUM_PRODUCT_WEIGHTS)]
-GATE = ALGEBRA.scalar(name='gate')
-
-@ALGEBRA.compile(symbolic=True)
-def grade_weighted_gp(X: MultiVector, Y: MultiVector, *Ws: tuple[MultiVector, ...]) -> MultiVector:
-    w0,w1,w2,w3,w4,w5,w6,w7,w8,w9 = Ws
-    X0 = X.grade(0)
-    X1 = X.grade(1)
-    X2 = X.grade(2)
-    Y0 = Y.grade(0)
-    Y1 = Y.grade(1)
-    Y2 = Y.grade(2)
-    return w0*X0*Y0 + w3*(X1|Y1) + w7*X2*Y2 \
-         + w1*X0*Y1 + w4*X1*Y0 + w5*X1*Y2 + w8*X2*Y1 \
-         + w2*X0*Y2 + w6*(X1^Y1) + w9*X2*Y0
-    
-
-# Call the function once to generate the symbolic expression
-# grade_weighted_gp(X, Y, *Ws)
-# grade_weighted_gp_kernel = triton.jit(grade_weighted_gp[X.keys(), Y.keys(), *(w.keys() for w in Ws)][1], debug=True)
-# Turn the compiled GA expression into a triton kernel.
-grade_weighted_gp_kernel = triton.jit(grade_weighted_gp.get_function(X, Y, *Ws))
-gate_kernel = triton.jit(ALGEBRA.gp.get_function(X, GATE))  # X * GATE
-
-
 
 
 @triton.jit
@@ -120,8 +87,8 @@ def gelu_wgp_norm_kernel_fwd(
 
     xvals = gate_kernel((x0,x1,x2,x3), (gate_x,))  # X * GATE_X
     yvals = gate_kernel((y0,y1,y2,y3), (gate_y,))  # Y * GATE_Y
-    wvals = (w0,),(w1,),(w2,),(w3,),(w4,),(w5,),(w6,),(w7,),(w8,),(w9,)
-    o0,o1,o2,o3 = grade_weighted_gp_kernel(xvals, yvals, *wvals)
+    wvals = (w0, w1, w2, w3, w4, w5, w6, w7, w8, w9)
+    o0,o1,o2,o3 = weighted_gp_kernel(xvals, yvals, (wvals,))
     
     if NORMALIZE:
         pn_scalar = tl.sum(o0 * o0, axis=1) / n_features
@@ -380,42 +347,25 @@ def gelu_wgp_norm_kernel_bwd(
     gate_x = compute_gelu_gate(x0_raw)
     gate_y = compute_gelu_gate(y0_raw)
 
-    x0,x1,x2,x3 = gate_kernel((x0_raw,x1_raw,x2_raw,x3_raw), (gate_x,))  # X * GATE_X
-    y0,y1,y2,y3 = gate_kernel((y0_raw,y1_raw,y2_raw,y3_raw), (gate_y,))  # Y * GATE_Y
+    xvals = gate_kernel((x0_raw,x1_raw,x2_raw,x3_raw), (gate_x,))  # X * GATE_X
+    yvals = gate_kernel((y0_raw,y1_raw,y2_raw,y3_raw), (gate_y,))  # Y * GATE_Y
+    wvals = (w0, w1, w2, w3, w4, w5, w6, w7, w8, w9)
+    grads, = weighted_gp_grad_kernel(xvals, yvals, (wvals,), (go0,go1,go2,go3)) # Returns a scalar, which we unpack immidiatelly.
 
-    tmp0 = go0*w0
-    tmp1 = go1*w1
-    tmp2 = go2*w1
-    tmp3 = go0*w3
-    tmp4 = w4*y0
-    tmp5 = w5*y3
-    tmp6 = go3*w6
-    tmp7 = go0*w7
-    tmp8 = go2*w8
-    tmp9 = go1*x1
-    tmp10 = go2*x2
-    tmp11 = go1*x2
+    x_grad_0, x_grad_1, x_grad_2, x_grad_3 = grads[0:4]
+    y_grad_0, y_grad_1, y_grad_2, y_grad_3 = grads[4:8]
+    _w_grad_0, _w_grad_1, _w_grad_2, _w_grad_3, _w_grad_4, _w_grad_5, _w_grad_6, _w_grad_7, _w_grad_8, _w_grad_9 = grads[8:]
 
-    x_grad_0 = (go3*w2*y3 + tmp0*y0 + tmp1*y1 + tmp2*y2)
-    x_grad_1 = (go1*tmp4 + go2*tmp5 + tmp3*y1 + tmp6*y2)
-    x_grad_2 = (-go1*tmp5 + go2*tmp4 + tmp3*y2 - tmp6*y1)
-    x_grad_3 = (go1*w8*y2 + go3*w9*y0 - tmp7*y3 - tmp8*y1)
-
-    y_grad_0 = (go3*w9*x3 + tmp0*x0 + tmp10*w4 + tmp9*w4)
-    y_grad_1 = (tmp1*x0 + tmp3*x1 - tmp6*x2 - tmp8*x3)
-    y_grad_2 = (go1*w8*x3 + tmp2*x0 + tmp3*x2 + tmp6*x1)
-    y_grad_3 = (go2*w5*x1 + go3*w2*x0 - tmp11*w5 - tmp7*x3)
-
-    w_grad_0 = tl.sum(go0*x0*y0, axis=0)
-    w_grad_1 = tl.sum(go1*x0*y1 + go2*x0*y2, axis=0)
-    w_grad_2 = tl.sum(go3*x0*y3, axis=0)
-    w_grad_3 = tl.sum(go0*(x1*y1 + x2*y2), axis=0)
-    w_grad_4 = tl.sum(tmp10*y0 + tmp9*y0, axis=0)
-    w_grad_5 = tl.sum(go2*x1*y3 - tmp11*y3, axis=0)
-    w_grad_6 = tl.sum(go3*(x1*y2 - x2*y1), axis=0)
-    w_grad_7 = tl.sum(-go0*x3*y3, axis=0)
-    w_grad_8 = tl.sum(go1*x3*y2 - go2*x3*y1, axis=0)
-    w_grad_9 = tl.sum(go3*x3*y0, axis=0)
+    w_grad_0 = tl.sum(_w_grad_0, axis=0)
+    w_grad_1 = tl.sum(_w_grad_1, axis=0)
+    w_grad_2 = tl.sum(_w_grad_2, axis=0)
+    w_grad_3 = tl.sum(_w_grad_3, axis=0)
+    w_grad_4 = tl.sum(_w_grad_4, axis=0)
+    w_grad_5 = tl.sum(_w_grad_5, axis=0)
+    w_grad_6 = tl.sum(_w_grad_6, axis=0)
+    w_grad_7 = tl.sum(_w_grad_7, axis=0)
+    w_grad_8 = tl.sum(_w_grad_8, axis=0)
+    w_grad_9 = tl.sum(_w_grad_9, axis=0)
 
     # GELU gate gradients
     dgate_x = compute_gelu_gate_grad(x0_raw)

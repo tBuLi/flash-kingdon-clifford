@@ -1,0 +1,11 @@
+[tests]
+rep = 10
+batch_size = 16
+num_features = 8
+
+[benchmarks]
+batch_sizes = [1024, 2048, 4096, 8192]
+num_features_list = [128, 256, 512, 1024]
+rep = 200
+warmup = 500
+

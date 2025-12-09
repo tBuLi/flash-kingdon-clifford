@@ -1,3 +1,6 @@
+import os
+os.environ["TRITON_CACHE_DIR"] = "C:/triton_cache"
+os.environ["TORCHINDUCTOR_CACHE_DIR"] = "C:/torch_cache"
 import torch
 import cuequivariance as cue
 import cuequivariance_torch as cuet

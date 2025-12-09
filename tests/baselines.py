@@ -63,7 +63,6 @@ def sgp_2d(x, y, weight):
     y0, y1, y2, y3 = y[0], y[1], y[2], y[3]
         
     w0, w1, w2, w3, w4, w5, w6, w7, w8, w9 = weight.T
-    
     o0 = w0 * x0 * y0 + w3 * (x1 * y1 + x2 * y2) - w7 * x3 * y3
     o1 = w1 * x0 * y1 + w4 * x1 * y0 - w5 * x2 * y3 + w8 * x3 * y2
     o2 = w1 * x0 * y2 + w5 * x1 * y3 + w4 * x2 * y0 - w8 * x3 * y1
