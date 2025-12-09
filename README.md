@@ -1,14 +1,11 @@
-<div align="center">
-
 # Flash Kingdon
 `flash-kingdon` provides efficient Triton-based implementations of Clifford algebra-based models.
 It is a fork of [`flash-clifford`](https://github.com/maxxxzdn/flash-clifford), aimed at showing how the fantastic work done in 
 `flash-clifford` can be made more scalable by leveraging the symbolic code optimization and CSE of the [`kingdon`](https://github.com/tBuLi/kingdon) package.
 
 `flash-kingdon` allows you to focus on writing efficient triton kernels, while kingdon automatically generates extremelly efficient implementations of geometric algebra operations for you that are compatible with triton.
-
+<div align="center">
 <img src="logo.png" alt="Flash Clifford Logo" width="30%">
-
 </div>
 
 ## $O(n)$-Equivariant operators
