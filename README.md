@@ -12,7 +12,7 @@ It is a fork of [`flash-clifford`](https://github.com/maxxxzdn/flash-clifford), 
 Currently only $O(2)$-equivariant have been implented (more to follow):
 - `fused_gelu_sgp_norm_nd`: multivector GELU $\rightarrow$ weighted geometric product $\rightarrow$ (optionally) multivector RMSNorm
 
-The geometric algebra part of the triton kernels is implemented as follows:
+The geometric algebra part of the 2D VGA triton kernels is implemented as follows:
 ```py
 from kingdon import Algebra, MultiVector
 from sympy import symbols, Symbol
