@@ -87,7 +87,9 @@ def gelu_wgp_norm_kernel_fwd(
 
     xvals = gate_kernel((x0,x1,x2,x3), (gate_x,))  # X * GATE_X
     yvals = gate_kernel((y0,y1,y2,y3), (gate_y,))  # Y * GATE_Y
-    wvals = (w0, w1, w2, w3, w4, w5, w6, w7, w8, w9)
+    # Order of the weights has to be changed to match the original hand-optimized code
+    # in the tests, but this can be done anyway with
+    wvals = (w0, w1, w2, w4, w3, w6, w5, w9, w8, w7)
     o0,o1,o2,o3 = weighted_gp_kernel(xvals, yvals, (wvals,))
     
     if NORMALIZE:

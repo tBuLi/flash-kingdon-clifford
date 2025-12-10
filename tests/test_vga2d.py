@@ -1,11 +1,13 @@
 """
 Test if the kingdon generated code is correct by comparing with the hand-optimized results.
 """
-from ops.vga2d import weighted_gp, weighted_gp_grad, X, Y, weights, ws, go
+from ops.vga2d import weighted_gp, weighted_gp_grad, X, Y, weights, go
 
 def test_weighted_gp():
     wgp_output = weighted_gp(X, Y, weights)
-    w0, w1, w2, w3, w4, w5, w6, w7, w8, w9 = ws
+    # Order of the weights has to be changed to match the original hand-optimized code
+    # but this is arbitrary anyway.
+    w0, w1, w2, w4, w3, w6, w5, w9, w8, w7 = weights.e
     x0,x1,x2,x3 = X.values()
     y0,y1,y2,y3 = Y.values()
     o0 = w0*x0*y0 + w3*(x1*y1 + x2*y2) - w7*x3*y3
@@ -16,14 +18,16 @@ def test_weighted_gp():
 
 def test_weighted_gp_grad():
     grad_wgp = weighted_gp_grad(X, Y, weights, go)
-    w0,w1,w2,w3,w4,w5,w6,w7,w8,w9 = ws
+    # Order of the weights has to be changed to match the original hand-optimized code
+    # but this is arbitrary anyway.
+    w0, w1, w2, w4, w3, w6, w5, w9, w8, w7 = weights.e
     x0,x1,x2,x3 = X.values()
     y0,y1,y2,y3 = Y.values()
     go0,go1,go2,go3 = go.values()
 
     (grad_x0, grad_x1, grad_x2, grad_x3, 
      grad_y0, grad_y1, grad_y2, grad_y3, 
-     grad_w0, grad_w1, grad_w2, grad_w3, grad_w4, grad_w5, grad_w6, grad_w7, grad_w8, grad_w9) = grad_wgp.e
+     grad_w0, grad_w1, grad_w2, grad_w4, grad_w3, grad_w6, grad_w5, grad_w9, grad_w8, grad_w7) = grad_wgp.e
 
     assert not grad_w0 - (go0*x0*y0)
     assert not grad_w1 - (go1*x0*y1 + go2*x0*y2)

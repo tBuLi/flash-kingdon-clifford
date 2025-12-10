@@ -9,7 +9,7 @@ It is a fork of [`flash-clifford`](https://github.com/maxxxzdn/flash-clifford), 
 </div>
 
 ## $O(n)$-Equivariant operators
-Currently only $O(2)$-equivariant have been implented (more to follow):
+Currently only $O(2)$ and $O(3)$-equivariant have been implented (more to follow):
 - `fused_gelu_sgp_norm_nd`: multivector GELU $\rightarrow$ weighted geometric product $\rightarrow$ (optionally) multivector RMSNorm
 
 The geometric algebra part of the 2D VGA triton kernels is implemented as follows:
@@ -145,3 +145,4 @@ which will check both forward and backward (gradient) passes as well as measure 
 ## TODO
 
 - Implement and benchmark 3D VGA and Fully Connected layers
+- The default code printer of `kingdon` uses tuple unpacking, but we can make a custom printer that uses `triton.language`'s `load` and `store` methods out of the box, thereby abstracting even more code writing efforts away.

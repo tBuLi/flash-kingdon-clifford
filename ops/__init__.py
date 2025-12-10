@@ -8,3 +8,5 @@ from .p3m0 import NUM_PRODUCT_WEIGHTS as P3M0_NUM_PRODUCT_WEIGHTS
 
 from .p2m0 import NUM_GRADES as P2M0_NUM_GRADES
 from .p3m0 import NUM_GRADES as P3M0_NUM_GRADES
+
+from .kingdon_ops import number_of_wgp_terms, wgp, wgp_grad
