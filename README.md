@@ -111,8 +111,14 @@ Let's put some benchmarks to these claims.
 | **Forward Pass Memory Ratio** | <img src="tests/benchmarks/results/p2m0/memory/fwd.png" width="100%"> | <img src="tests/benchmarks/results/p2m0_kingdon/memory/fwd.png" width="100%"> |
 | **Forward + Backward Pass Memory Ratio** | <img src="tests/benchmarks/results/p2m0/memory/fwd_bwd.png" width="100%"> | <img src="tests/benchmarks/results/p2m0_kingdon/memory/fwd_bwd.png" width="100%"> |
 
-Conclusion: both `flash-clifford` and `flash-kingdon` are indistinguishable in their performance increase over the reference torch implementation.
-More benchmarks to follow, when we implement 3D, which should be more statistically significant, but no difference between the two is expected.
+| Metric | Flash-Clifford (`p3m0`) | Flash-Kingdon (`p3m0_kingdon`) |
+|--------|-------------------------|--------------------------------|
+| **Forward Pass Speedup** | <img src="tests/benchmarks/results/p3m0/speedup/fwd.png" width="100%"> | <img src="tests/benchmarks/results/p3m0_kingdon/speedup/fwd.png" width="100%"> |
+| **Forward + Backward Pass Speedup** | <img src="tests/benchmarks/results/p3m0/speedup/fwd_bwd.png" width="100%"> | <img src="tests/benchmarks/results/p3m0_kingdon/speedup/fwd_bwd.png" width="100%"> |
+| **Forward Pass Memory Ratio** | <img src="tests/benchmarks/results/p3m0/memory/fwd.png" width="100%"> | <img src="tests/benchmarks/results/p3m0_kingdon/memory/fwd.png" width="100%"> |
+| **Forward + Backward Pass Memory Ratio** | <img src="tests/benchmarks/results/p3m0/memory/fwd_bwd.png" width="100%"> | <img src="tests/benchmarks/results/p3m0_kingdon/memory/fwd_bwd.png" width="100%"> |
+
+Conclusion: both `flash-clifford` and `flash-kingdon` are pretty much indistinguishable in their performance increase over the reference torch implementation; we have to check if the small deviations between the two are significant.
 
 ## Requirements
 The following requirements must be satisfied:
@@ -144,5 +150,5 @@ which will check both forward and backward (gradient) passes as well as measure 
 
 ## TODO
 
-- Implement and benchmark 3D VGA and Fully Connected layers
+- Implement and benchmark Fully Connected layers
 - The default code printer of `kingdon` uses tuple unpacking, but we can make a custom printer that uses `triton.language`'s `load` and `store` methods out of the box, thereby abstracting even more code writing efforts away.
